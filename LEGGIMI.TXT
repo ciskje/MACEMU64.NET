@@ -1,0 +1,28 @@
+MACEMU 4.0
+----------
+
+Ultime Note:
+
+- Nella confezione sono inclusi due nuovi programmi MAC:
+    SCHED.ASM
+      che e' uno scheduler che usa il dispositivo timer
+      per commutare tra due programmi mac molto semplici
+      esso salva sia AC che lo SP nella commutazione!
+      e' usato uno stack ausiliario per la commutazione
+    DEMOTASK.ASM
+      e' un demo dello scheduler SCHED, esegue due programmi
+      molto complessi, come FIBO.ASM e CIRCLES.ASM in multi-tasking!!!
+
+
+E-MAIL:
+
+Ferrara Francesco
+  ferrara.francesco@educ.di.unito.it
+Baragiotta Gianluca
+  baragiotta.gianluca@educ.di.unito.it
+Carrera Alberto
+  carrera.alberto@educ.di.unito.it
+
+
+
+

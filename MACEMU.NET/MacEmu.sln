@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacEmu.Core", "MacEmu.Core\MacEmu.Core.csproj", "{2CA28AE0-E7E2-48D9-B70C-46036F7E8BD1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacEmu.UI", "MacEmu.UI\MacEmu.UI.csproj", "{3B5D37B7-FB74-4B17-8C1A-A8F4775791EC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacEmu.Tests", "MacEmu.Tests\MacEmu.Tests.csproj", "{0DF56488-1724-4C92-8D1B-B002E092C3BA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2CA28AE0-E7E2-48D9-B70C-46036F7E8BD1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2CA28AE0-E7E2-48D9-B70C-46036F7E8BD1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2CA28AE0-E7E2-48D9-B70C-46036F7E8BD1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2CA28AE0-E7E2-48D9-B70C-46036F7E8BD1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B5D37B7-FB74-4B17-8C1A-A8F4775791EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B5D37B7-FB74-4B17-8C1A-A8F4775791EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B5D37B7-FB74-4B17-8C1A-A8F4775791EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B5D37B7-FB74-4B17-8C1A-A8F4775791EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0DF56488-1724-4C92-8D1B-B002E092C3BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0DF56488-1724-4C92-8D1B-B002E092C3BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0DF56488-1724-4C92-8D1B-B002E092C3BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0DF56488-1724-4C92-8D1B-B002E092C3BA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,116 @@
+p1: alu:=f; if n then goto p31;						{Se il bit MSB di F vale uno allora gli int sono disabilitati}
+: a:=band(f,smask); if z then goto p31;			{Ci sono interrupt? smask=0xff}
+: sp:=sp + (-1);										   {Ci sono!}
+: mar:=sp; mbr:=pc; wr;									{Salva il PC nello stack}
+: wr; sp:=sp + (-1);
+: mar:=sp; mbr:=ac; wr;									{Salva AC nello stack}
+: wr;
+: mar:=smask; rd;											{Carica la loc 255 nel PC. smask=0xff=255}
+: rd;
+: pc:=mbr;
+: ac:=f;                                        {Gli interrupt sono copiati in AC}
+: f:=f+b;													{b=0x8000 Disabilita gli interrupt}
+p31: mar:=pc; rd;
+: pc:=pc + 1; rd;
+: ir:=mbr; if n then goto p2;
+: tir:=lshift(ir + ir); if n then goto p3;
+: tir:=lshift(tir); if n then goto p4;
+: alu:=tir; if n then goto p5;
+: mar:=ir; rd;                                  {0000 = LODD}
+p14: rd;
+: ac:=mbr; goto p1;
+p5: mar:=ir; mbr:=ac; wr;                       {0001 = STOD}
+p15: wr; goto p1;
+p4: alu:=tir; if n then goto p6;
+: mar:=ir; rd;                                  {0010 = ADDD}
+p17: rd;
+: ac:=mbr + ac; goto p1;
+p6: mar:=ir; rd;                                {0011 = SUBD}
+p18: ac:=ac + 1; rd;
+: a:=inv(mbr);
+: ac:=ac + a; goto p1;
+p3: tir:=lshift(tir); if n then goto p7;
+: alu:=tir; if n then goto p8;
+: alu:=ac; if n then goto p1;                   {0100 = JPOS}
+p9: pc:=band(ir,amask); goto p1;
+p8: alu:=ac; if z then goto p9;                 {0101 = JZER}
+: goto p1;
+p7: alu:=tir; if n then goto p10;
+: pc:=band(ir,amask); goto p1;                  {0110 = JUMP}
+p10: ac:=band(ir,amask); goto p1;               {0111 = LOCO}
+p2: tir:=lshift(ir + ir); if n then goto p11; 
+: tir:=lshift(tir); if n then goto p12;
+: alu:=tir; if n then goto p13;
+: a:=ir + sp;                                   {1000 = LODL}
+: mar:=a; rd; goto p14;
+p13: a:=ir + sp;                                {1001 = STOL}
+: mar:=a; mbr:=ac; wr; goto p15;
+p12: alu:=tir; if n then goto p16;
+: a:=ir + sp;                                   {1010 = ADDL}
+: mar:=a; rd; goto p17;
+p16: a:=ir + sp;                                {1011 = SUBL}
+: mar:=a; rd; goto p18;
+p11: tir:=lshift(tir); if n then goto p19;
+: alu:=tir; if n then goto p20;
+: alu:=ac; if n then goto p9;                   {1100 = JNEG}
+: goto p1;
+p20: alu:=ac; if z then goto p1;                {1101 = JNZE}
+: pc:=band(ir,amask); goto p1;
+p19: tir:=lshift(tir); if n then goto p21;
+: sp:=sp + (-1);                                {1110 = CALL}
+: mar:=sp; mbr:=pc; wr;
+: pc:=band(ir,amask); wr; goto p1;
+p21: tir:=lshift(tir); if n then goto p22;
+: tir:=lshift(tir); if n then goto p23;
+: alu:=tir; if n then goto p24;
+: mar:=ac; rd;                                  {1111-0000 = PSHI}
+: sp:=sp + (-1); rd;
+: mar:=sp; wr; goto p15;
+p24: mar:=sp; sp:=sp + 1; rd;                   {1111-0010 = POPI}
+: rd;
+: mar:=ac; wr; goto p15;
+p23: alu:=tir; if n then goto p25;
+: sp:=sp + (-1);                                {1111-0100 = PUSH}
+: mar:=sp; mbr:=ac; wr; goto p15;
+p25: mar:=sp; sp:=sp + 1; rd;                   {1111-0110 = POP}
+: rd;
+: ac:=mbr; goto p1;
+p22: tir:=lshift(tir); if n then goto p26;
+: tir:=lshift(tir); if n then goto p27;
+: mar:=sp; sp:=sp + 1; rd;                      {1111-1000 = RETN}
+: rd;
+: pc:=mbr; goto p1;
+p27: alu:=tir; if n then goto p32;
+: a:=ac;                                        {1111-1010 = SWAP}
+: ac:=sp;
+: sp:=a; goto p1;
+p32: a:=band(ir,smask);                         {1111-1011 *= ANDL}
+: sp:=sp + a;
+: mar:=sp; rd;
+: rd;
+: a:=mbr;
+: ac:=band(ac,a); goto p1;
+p26: tir:=lshift(tir); if n then goto p28;
+: tir:=lshift(tir); if n then goto p33;
+: a:=band(ir,smask);                            {1111-1100 = INSP}
+p30: sp:=sp + a; goto p1;
+p33: tir:=lshift(tir); if n then goto p34;
+: tir:=lshift(tir); if n then goto p35;
+: tir:=lshift(tir); if n then goto p36;
+: mar:=sp; rd;                                  {1111-1101 0000 *= RETI}
+: sp:=sp + 1; rd;
+: ac:=mbr;
+: f:=0;
+: mar:=sp; rd;
+: sp:=sp + 1; rd;
+: pc:=mbr; goto p1;
+p34: f:=(-1); goto p1;                          {1111-1101 1000 *= DINT}
+p35: a:=b;                                      {1111-1101 0100 *= EINT}
+: a:=inv(a);
+: f:=band(f,a); goto p1;
+p36: ac:=inv(ac); goto p1;                      {1111-1101 0010 *= NOT}
+p28: alu:=tir; if n then goto p29;
+: a:=band(ir, smask);                           {1111-1110 = DESP}
+: a:=inv(a);
+: a:=a + 1; goto p30;
+p29: halt;                                      {1111-1111 = HALT}

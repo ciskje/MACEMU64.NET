@@ -1,0 +1,49 @@
+.c.obj:
+  wcc386 $<
+
+macemu32.exe:  macemu.obj alu.obj  amux.obj  cbus.obj  cpu.obj  cstore.obj latch.obj  macemu.obj  memoria.obj  mir.obj  mmux.obj  mpc.obj  msl.obj  mxr.obj  registri.obj  shifter.obj  visual.obj  menu.obj sysbus.obj keyb.obj dismac.obj printer.obj timer.obj
+  wcl386 *.obj /l=pmodew /fe=macemu32.exe
+
+timer.obj: timer.c
+
+printer.obj: printer.c
+
+dismac.obj: dismac.c
+
+alu.obj:  alu.c
+
+amux.obj:  amux.c 
+
+cbus.obj:  cbus.c 
+
+cpu.obj:  cpu.c 
+
+cstore.obj:  cstore.c 
+
+latch.obj:  latch.c 
+
+macemu.obj:  macemu.c 
+
+memoria.obj:  memoria.c 
+
+mir.obj:  mir.c 
+
+mmux.obj:  mmux.c 
+
+mpc.obj:  mpc.c 
+
+msl.obj:  msl.c 
+
+mxr.obj:  mxr.c 
+
+registri.obj:  registri.c 
+
+shifter.obj:  shifter.c 
+
+visual.obj:  visual.c
+
+menu.obj:  menu.c 
+
+sysbus.obj:  sysbus.c 
+
+keyb.obj: keyb.c

@@ -5,6 +5,8 @@ MACEMU.NET/**/publish/
 *.pdb
 # Self-contained release binary (ricostruibile, ~150MB)
 MACEMU64.EXE
+# Pacchetti di release (su GitHub Releases, non nel repo)
+*.zip
 # OS / editor
 Thumbs.db
 Desktop.ini

@@ -7,6 +7,12 @@ del **MAC-1**, scritto nel 1996 da F. Ferrara, G. Baragiotta e A. Carrera
 (gruppo ARCHA8, Università di Torino). Stessa CPU, stesso microprogramma,
 stessa interfaccia.
 
+## Download
+
+Scarica **`MACEMU64-v4.0b.zip`** da
+[Releases](https://github.com/ciskje/MACEMU64.NET/releases/latest),
+scompatta ed esegui `MACEMU64.EXE` (self-contained, non serve installare .NET).
+
 ## Avvio rapido
 
 Lancia `MACEMU64.EXE` (self-contained, non serve installare .NET):

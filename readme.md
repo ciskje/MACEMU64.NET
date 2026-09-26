@@ -19,6 +19,9 @@ Lancia `MACEMU64.EXE` (self-contained, non serve installare .NET):
 
 1. `LOAD PROGRAM` → scrivi `FIBO.MAC` → Invio → ESC
 2. Freccia giù fino a `RUNNING MENU` → Invio → **F1** per RUN
+3. Con `CIRCLES.MAC`, premi **F9** per la vista grafica (MEMDISPLAY):
+
+![CIRCLES.MAC in MEMDISPLAY (F9)](circles-memdisplay.png)
 
 Tasti come l'originale: `F1` RUN, `F2` micro-passo, `F3` macro-passo,
 `F4`–`F6` registri/breakpoint, `F7`/`F8`/`F9`/`F10` modalità video,

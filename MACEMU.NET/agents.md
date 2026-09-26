@@ -71,6 +71,10 @@ Exe rilasciato: `../MACEMU64.EXE` (self-contained). Originali DOS in `../BIN_ORI
   occupato (niente throttle: sfasa i rimbalzi di Arcanoid).
 - **Shell = git-bash**: niente cmdlet PowerShell inline; opzioni MSBuild con `-p:`,
   non `/p:`. Niente `zip`/`7z`: zip via `Expand-Archive`/`Compress-Archive`.
+- **MiniC** (`MacEmu.Core/Asm/MiniC.cs`, manuale in `../MINIC.md`): C subset →
+  `.ASM` via `MacAssembler`. Sorgenti `.C` in `../MACRO/` a **max 40 colonne**
+  (schermo 320x200 a font 8px). Zero `asm()` nei `.C`: tutto in `UTILITY.H`.
+  Test in `MacEmu.Tests/MiniCTests.cs` (differenziali .C vs .MAC).
 
 ## Build / rilascio
 

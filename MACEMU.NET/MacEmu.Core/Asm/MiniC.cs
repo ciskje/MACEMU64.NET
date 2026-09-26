@@ -15,7 +15,7 @@ public sealed class MiniCException : Exception
 public sealed class MiniC
 {
     // ---------- lexer ----------
-    enum Tk { Eof, Num, Name, Str, KwInt, KwVoid, KwIf, KwElse, KwWhile, KwReturn,
+    enum Tk { Eof, Num, Name, Str, Cmt, KwInt, KwVoid, KwIf, KwElse, KwWhile, KwReturn,
         KwPrint, KwHalt, KwDint, KwEint, KwAsm, KwFor,
         Lpar, Rpar, Lbr, Rbr, Lsq, Rsq, Semi, Comma, Assign,
         Plus, Minus, Star, Slash, Tilde, Lt, Le, Gt, Ge, Eq, Ne }
@@ -64,7 +64,7 @@ public sealed class MiniC
         while (i < src.Length)
         {
             char c = src[i];
-            if (c == '/' && i + 1 < src.Length && src[i + 1] == '/') { while (i < src.Length && src[i] != '\n') i++; continue; }
+            if (c == '/' && i + 1 < src.Length && src[i + 1] == '/') { int j = i + 2; while (j < src.Length && src[j] != '\n') j++; _toks.Add(new Tok { K = Tk.Cmt, S = src[i..j].TrimEnd('\r') }); i = j; continue; }
             if (c == '\'')
             {
                 if (i + 2 >= src.Length || src[i + 2] != '\'')
@@ -129,7 +129,7 @@ public sealed class MiniC
     sealed class NNeg : Node { public Node? E; }
     sealed class NNot : Node { public Node? E; }
     sealed class NCall : Node { public string N = ""; public List<Node> A = new(); }
-    abstract class St { }
+    abstract class St { public List<string> Lead = new(); public List<string> Trail = new(); }
     sealed class SExpr : St { public Node? E; }
     sealed class SDecl : St { public string N = ""; public Node? Init; }
     sealed class SSet : St { public string N = ""; public Node? Idx, E; }
@@ -145,22 +145,36 @@ public sealed class MiniC
     sealed class Func
     {
         public string N = "";
+        public List<string> Lead = new();
+        public List<string> Trail = new();
         public bool Void;
         public List<string> Params = new();
         public List<string> Locals = new();
         public List<St> Body = new();
     }
-    sealed class Glob { public string N = ""; public int Size = 1; public int Init; }
+    sealed class Glob { public string N = ""; public int Size = 1; public int Init; public List<string> Lead = new(); }
 
     readonly List<Func> _funcs = new();
     readonly List<Glob> _globs = new();
     readonly Dictionary<string, int> _equ = new(); // NAME = constexpr (upper-case)
+    readonly List<object> _order = new(); // Func/Glob/EquN in source order (comments!)
+    readonly List<string> _tail = new(); // trailing comments
+    sealed class EquN { public string N = ""; public List<string> Lead = new(); }
+
+    List<string> TakeComments()
+    {
+        var l = new List<string>();
+        while (At(Tk.Cmt)) { string t = Next().S; l.Add(t.StartsWith("//") ? t[1..] : t); }
+        return l;
+    }
 
     // ---------- parser ----------
     void Parse()
     {
         while (!At(Tk.Eof))
         {
+            var lead = TakeComments();
+            if (At(Tk.Eof)) { _tail.AddRange(lead); break; }
             if (At(Tk.Name))
             {
                 // EQUATE: NAME = constexpr ;  (define-before-use)
@@ -172,13 +186,14 @@ public sealed class MiniC
                 if (_equ.ContainsKey(en) || _funcs.Exists(f => f.N == en) || _globs.Exists(g => g.N == en))
                     throw new MiniCException($"dup symbol {en}");
                 _equ[en] = v;
+                _order.Add(new EquN { N = en, Lead = lead });
                 continue;
             }
             bool isVoid = At(Tk.KwVoid);
             if (!At(Tk.KwInt) && !isVoid) throw new MiniCException($"expected type, got '{Peek().S}'");
             Next();
             string name = Expect(Tk.Name).S;
-            if (At(Tk.Lpar)) ParseFunc(name, isVoid);
+            if (At(Tk.Lpar)) { var f = ParseFunc(name, isVoid); f.Lead.AddRange(lead); }
             else
             {
                 if (isVoid) throw new MiniCException("void global");
@@ -200,7 +215,8 @@ public sealed class MiniC
                     else if (At(Tk.Name) && _equ.TryGetValue(Expect(Tk.Name).S, out int iv)) init = iv;
                     else throw new MiniCException("global init must be a number or = constant");
                 }
-                _globs.Add(new Glob { N = name, Size = size, Init = init });
+                _globs.Add(new Glob { N = name, Size = size, Init = init, Lead = lead });
+                _order.Add(_globs[^1]);
                 while (At(Tk.Comma)) throw new MiniCException("one global per declaration");
                 Expect(Tk.Semi);
             }
@@ -243,7 +259,7 @@ public sealed class MiniC
         throw new MiniCException($"bad constant near '{Peek().S}'");
     }
 
-    void ParseFunc(string name, bool isVoid)
+    Func ParseFunc(string name, bool isVoid)
     {
         if (_funcs.Exists(f => f.N == name) || _equ.ContainsKey(name) || _globs.Exists(g => g.N == name))
             throw new MiniCException($"dup function {name}");
@@ -263,14 +279,31 @@ public sealed class MiniC
         }
         Expect(Tk.Rpar);
         Expect(Tk.Lbr);
-        while (!At(Tk.Rbr)) f.Body.Add(ParseStmt(f));
+        St? last = null;
+        while (true)
+        {
+            var t = TakeComments();
+            if (At(Tk.Rbr)) { if (last != null) last.Trail.AddRange(t); else f.Trail.AddRange(t); break; }
+            last = ParseStmt(f);
+            last.Lead.InsertRange(0, t);
+            f.Body.Add(last);
+        }
         Expect(Tk.Rbr);
         _funcs.Add(f);
+        _order.Add(f);
+        return f;
     }
 
     St ParseStmt(Func f)
     {
-        if (At(Tk.Lbr)) { Next(); var b = new List<St>(); while (!At(Tk.Rbr)) b.Add(ParseStmt(f)); Expect(Tk.Rbr); return new SBlockList { S = b }; }
+        var lead = TakeComments();
+        var s = ParseStmtInner(f);
+        s.Lead.AddRange(lead);
+        return s;
+    }
+    St ParseStmtInner(Func f)
+    {
+        if (At(Tk.Lbr)) { Next(); var b = new List<St>(); St? last = null; while (true) { var t = TakeComments(); if (At(Tk.Rbr)) { if (last != null) last.Trail.AddRange(t); break; } last = ParseStmt(f); last.Lead.InsertRange(0, t); b.Add(last); } Expect(Tk.Rbr); return new SBlockList { S = b }; }
         if (At(Tk.KwInt))
         {
             Next();
@@ -569,6 +602,7 @@ public sealed class MiniC
 
     void GenSt(St s)
     {
+        foreach (var cmt in s.Lead) _out.Add("        /" + cmt);
         switch (s)
         {
             case SBlockList b: foreach (var x in b.S) GenSt(x); break;
@@ -629,6 +663,7 @@ public sealed class MiniC
             }
             default: throw new MiniCException("bad stmt");
         }
+        foreach (var cmt in s.Trail) _out.Add("        /" + cmt);
     }
 
     // cond jump: Then=null means fallthrough. AC-safe (balanced stack).
@@ -692,25 +727,35 @@ public sealed class MiniC
     // readInclude(name) -> file text; enables #include "file" (depth <= 8)
     public List<string> Compile(string src, Func<string, string>? readInclude)
     {
+        _toks.Clear(); _pos = 0;
+        _funcs.Clear(); _globs.Clear(); _equ.Clear(); _order.Clear(); _tail.Clear();
         Lex(ExpandIncludes(src, readInclude, 0)); Parse();
         _out.Clear(); _lbl = 0;
         _out.Add("/ generated by MiniC");
         _out.Add("        JUMP main");
-        foreach (var f in _funcs)
+        foreach (var o in _order)
         {
-            if (f.N.StartsWith("Lc", StringComparison.OrdinalIgnoreCase)) throw new MiniCException("Lc prefix reserved");
-            _cur = f;
-            EmitLab(f.N);
-            if (L > 0) Emit($"DESP {L}");
-            foreach (var s in f.Body) GenSt(s);
-            if (f.N == "main") Emit("HALT");
-            else { if (L > 0) Emit($"INSP {L}"); Emit("RETN"); }
+            if (o is EquN eq) { foreach (var cmt in eq.Lead) _out.Add("        /" + cmt); continue; }
+            if (o is Func f)
+            {
+                foreach (var cmt in f.Lead) _out.Add("        /" + cmt);
+                if (f.N.StartsWith("Lc", StringComparison.OrdinalIgnoreCase)) throw new MiniCException("Lc prefix reserved");
+                _cur = f;
+                EmitLab(f.N);
+                if (L > 0) Emit($"DESP {L}");
+                foreach (var s in f.Body) GenSt(s);
+                foreach (var cmt in f.Trail) _out.Add("        /" + cmt);
+                if (f.N == "main") Emit("HALT");
+                else { if (L > 0) Emit($"INSP {L}"); Emit("RETN"); }
+            }
+            else if (o is Glob g)
+            {
+                foreach (var cmt in g.Lead) _out.Add("        /" + cmt);
+                _out.Add($"{g.N}: {g.Init}");
+                for (int j = 1; j < g.Size; j++) _out.Add("0");
+            }
         }
-        foreach (var g in _globs)
-        {
-            _out.Add($"{g.N}: {g.Init}");
-            for (int j = 1; j < g.Size; j++) _out.Add("0");
-        }
+        foreach (var cmt in _tail) _out.Add("        /" + cmt);
         return _out;
     }
 }

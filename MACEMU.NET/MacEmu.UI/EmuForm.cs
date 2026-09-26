@@ -65,15 +65,13 @@ public partial class EmuForm : Form
         Shown += (_, _) => ShowSplash("MACSTART.BCF", false);
     }
 
-    int _lastBell;
-    // Bell stampante (PRINTER.C): beep kernel 880Hz, non il suono di sistema
-    // (indipendente dallo schema audio), strozzato per non mitragliare durante RUN veloce
+    int _bellBusy;
+    // Bell stampante (PRINTER.C): beep kernel 880Hz async. Se lo speaker e' ancora
+    // occupato il bip si salta (come l'hardware), cosi' resta in passo col gioco.
     void Bell()
     {
-        int now = Environment.TickCount;
-        if (now - _lastBell < 250) return;
-        _lastBell = now;
-        ThreadPool.QueueUserWorkItem(_ => { try { Console.Beep(880, 150); } catch { } });
+        if (System.Threading.Interlocked.Exchange(ref _bellBusy, 1) == 1) return;
+        ThreadPool.QueueUserWorkItem(_ => { try { Console.Beep(880, 90); } catch { } finally { _bellBusy = 0; } });
     }
 
     string Asset(string rel) => Path.Combine(_baseDir, rel);

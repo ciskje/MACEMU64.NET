@@ -66,13 +66,14 @@ public partial class EmuForm : Form
     }
 
     int _lastBell;
-    // Bell stampante (PRINTER.C): suono di sistema, strozzato per non mitragliare durante RUN veloce
+    // Bell stampante (PRINTER.C): beep kernel 880Hz, non il suono di sistema
+    // (indipendente dallo schema audio), strozzato per non mitragliare durante RUN veloce
     void Bell()
     {
         int now = Environment.TickCount;
         if (now - _lastBell < 250) return;
         _lastBell = now;
-        System.Media.SystemSounds.Beep.Play();
+        ThreadPool.QueueUserWorkItem(_ => { try { Console.Beep(880, 150); } catch { } });
     }
 
     string Asset(string rel) => Path.Combine(_baseDir, rel);

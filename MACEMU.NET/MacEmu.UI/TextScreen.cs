@@ -197,7 +197,7 @@ public sealed class TextScreen : Control
         Printc(x0, y0, Vga.COLOR15 << 8, text);
         if (hilite >= 0 && hilite < text.Length)
             Printc(x0 + hilite, y0, Vga.COLOR16 << 8, text[hilite].ToString());
-        for (int i = 0; i < text.Length; i++) Printc(x0 + i, y0 + 1, Vga.COLOR5 << 8, "▀");
+        for (int i = 0; i < text.Length; i++) Printc(x0 + i + 1, y0 + 1, Vga.COLOR5 << 8, "▀"); // MENU.C Key: ombra +1
         Printc(x0 + text.Length, y0, Vga.COLOR5 << 8, "▀");
     }
 }

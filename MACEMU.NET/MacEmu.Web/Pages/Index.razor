@@ -1,0 +1,468 @@
+@page "/"
+@inject HttpClient Http
+@inject IJSRuntime JS
+@implements IDisposable
+@using MacEmu.Core.Asm
+
+<header class="top">
+  <h1>MACEMU 4.0c (Web) — emulatore MAC-1 nel browser</h1>
+  <p>Port del celebre emulatore DOS (1996, gruppo ARCHA8). Stessa CPU, stesso microprogramma. Clicca sullo schermo per dargli il focus tastiera.</p>
+</header>
+
+<main class="wrap">
+  @if (fatalError != "")
+  {
+    <div class="panelbox">
+      <h3>Errore avvio</h3>
+      <div class="err">@fatalError</div>
+    </div>
+  }
+  <div class="emu-layout">
+  <div class="col-main">
+  <div id="emuKeys" tabindex="0" @onclick="FocusKeys" title="Clicca qui, poi usa la tastiera come nell'originale">
+    <div class="stage">
+      @if (showGfx)
+      {
+        <canvas id="gfxCanvas" class="screen" width="1280" height="800"></canvas>
+        <canvas id="textCanvas" width="1280" height="800" style="display:none"></canvas>
+      }
+      else
+      {
+        <canvas id="textCanvas" class="screen" width="1280" height="800"></canvas>
+        <canvas id="gfxCanvas" width="1280" height="800" style="display:none"></canvas>
+      }
+    </div>
+  </div>
+
+  <div class="status">
+    <span>modo: <b>@ModeText</b></span>
+    <span>video: <b>@VideoText</b></span>
+    <span>motore: <b>@(eng.Running ? "RUN" : "STOP")</b></span>
+    <span>refresh: <b>@eng.Rates</b></span>
+    <span>stampante: <b>@eng.PrinterText</b></span>
+    @if (!booted) { <span><b>@bootMsg</b></span> }
+  </div>
+  </div>
+  <div class="col-side">
+
+  
+  
+
+  @if (eng.UploadRequest != null)
+  {
+    <div class="panelbox">
+      <h3>File dal computer</h3>
+      <div>Nome non trovato tra gli esempi: scegli il file dal disco.</div>
+      <label>file: <InputFile OnChange="OnUploadFile" accept=".mac,.mic,.MAC,.MIC" /></label>
+      @if (uploadErr != null) { <div class="err">@uploadErr</div> }
+      <div class="row"><button @onclick="CancelUpload">annulla</button></div>
+    </div>
+  }
+  </div>
+  </div>
+  <div class="tabs">
+    <button class="@(tab == 0 ? "sel" : "")" @onclick="() => tab = 0">emulatore</button>
+    <button class="@(tab == 1 ? "sel" : "")" @onclick="() => OpenMiniC()">MiniC → MAC</button>
+    <button class="@(tab == 2 ? "sel" : "")" @onclick="() => OpenMasm()">Masm → MAC</button>
+  </div>
+
+  @if (tab == 1)
+  {
+    <div class="panelbox">
+      <h3>MiniC: sottoinsieme C che compila in assembly MAC (vedi MINIC.md nel repo)</h3>
+      <label>sorgente: <select value="@cFile" @onchange="OnCFileChange">@foreach (var s in minicFiles) { <option value="@s">@($"{s}.C")</option> }</select></label>
+      <textarea @bind="cSource" spellcheck="false"></textarea>
+      <div class="row">
+        <button @onclick="CompileMiniC">compila e carica in memoria</button>
+        @if (cMac != "") { <button @onclick="SaveCMac">scarica .MAC</button> }
+      </div>
+      @if (cStatus != null) { <div class="@(cIsErr ? "err" : "ok")">@cStatus</div> }
+    </div>
+  }
+  @if (tab == 2)
+  {
+    <div class="panelbox">
+      <h3>Masm: assembler macro (ex MASM.EXE)</h3>
+      <label>sorgente: <select value="@asmFile" @onchange="OnAsmFileChange">@foreach (var s in masmFiles) { <option value="@s">@($"{s}.ASM")</option> }</select></label>
+      <textarea @bind="asmSource" spellcheck="false"></textarea>
+      <div class="row">
+        <button @onclick="AssembleMasm">assembla e carica in memoria</button>
+        @if (asmMac != "") { <button @onclick="SaveAsmMac">scarica .MAC</button> }
+      </div>
+      @if (asmStatus != null) { <div class="@(asmIsErr ? "err" : "ok")">@asmStatus</div> }
+    </div>
+  }
+
+  <footer class="help">
+    <p>Tasti come l'originale: <code>F1</code> RUN, <code>F2</code> micro-passo, <code>F3</code> macro-passo,
+    <code>F4</code>–<code>F6</code> registri/breakpoint, <code>F7</code>/<code>F8</code>/<code>F9</code>/<code>F10</code> modalità video,
+    <code>PgUp</code>/<code>PgDn</code> scroll, <code>Alt+I</code>/<code>R</code>/<code>J</code>/<code>A</code>, <code>ESC</code> indietro.
+    Nei programmi che leggono da tastiera (es. TEST), i caratteri digitati a schermo RUN arrivano alla tastiera emulata.</p>
+    <p>Note browser: <code>F5</code> (reload) e <code>F11</code> restano del browser,
+    <code>Alt+lettera</code> può essere intercettato dal SO: in tal caso usa il
+    menu su schermo con i tasti che passano. Su macOS il tasto <code>Alt</code> è
+    <code>Option</code>. Clicca sullo schermo per dargli il focus tastiera.</p>
+    <p>Font <i>Px437 IBM EGA 8x8</i> di VileR (int10h.org), licenza CC BY-SA 4.0. Programma originale © 1996 F. Ferrara, G. Baragiotta, A. Carrera.</p>
+  </footer>
+</main>
+
+@code {
+  readonly string[] sampleMacs =
+    ["FIBO", "CIRCLES", "FLOWERS", "SCHED", "DEMOTASK", "ARCANOID", "INSTR", "LENTO", "HELLO", "FIBOINT", "DEMOINT", "READINT", "TEST"];
+  readonly string[] minicFiles =
+    ["FIBO", "CIRCLES", "FLOWERS", "SCHED", "DEMOTASK", "ARCANOID", "FIBOINT", "DEMOINT", "TEST", "INSTR", "LENTO", "HELLO"];
+  readonly string[] masmFiles =
+    ["FIBO", "HELLO", "CIRCLES", "FLOWERS", "ARCANOID", "SCHED", "DEMOTASK", "LENTO", "INSTR", "TEST", "FIBOINT", "DEMOINT", "MACDOS"];
+
+  readonly EmuEngine eng = new();
+  DotNetObjectReference<Index>? dotNetRef;
+  CancellationTokenSource cts = new();
+  bool booted;
+  string bootMsg = "avvio…";
+  string fatalError = "";
+  bool showGfx = true;
+  string currentSplash = "";
+  int lastScreenVersion = -1, lastUiVersion = -1;
+  string lastPrinter = "";
+  int tab;
+
+  string? uploadErr;
+  readonly Dictionary<string, string[]> fileStore = new(StringComparer.OrdinalIgnoreCase);
+
+  string cFile = "FIBO", cSource = "", cStatus = "", cMac = "";
+  bool cIsErr;
+  string asmFile = "FIBO", asmSource = "", asmStatus = "", asmMac = "";
+  bool asmIsErr;
+  string? utilityH;
+
+  string ModeText => eng.CurrentMode switch
+  {
+    EmuEngine.Mode.Splash => eng.SplashEnding ? "splash finale" : "splash",
+    EmuEngine.Mode.Main => "menu",
+    _ => "run",
+  };
+  string VideoText => eng.Video switch { 0 => "no-refresh", 2 => "memdisplay", _ => "text" };
+
+  protected override async Task OnInitializedAsync()
+  {
+    try
+    {
+      await JS.InvokeVoidAsync("MacEmu.init");
+      var macdos = SplitLines(await Http.GetStringAsync("sys/MACDOS.MAC"));
+      var mic = SplitLines(await Http.GetStringAsync("sys/cstore.mic"));
+      eng.OnBell = () => _ = JS.InvokeVoidAsync("MacEmu.beep");
+      eng.Boot(macdos, mic);
+      eng.FileResolver = ResolveFile;
+      await PrefetchSamplesAsync();
+      booted = true;
+    }
+    catch (Exception ex)
+    {
+      bootMsg = "manca asset di sistema o JS non caricato";
+      fatalError = "boot: " + ex.GetType().Name + ": " + ex.Message;
+    }
+  }
+
+  protected override async Task OnAfterRenderAsync(bool firstRender)
+  {
+    if (firstRender)
+    {
+      dotNetRef = DotNetObjectReference.Create(this);
+      try { await JS.InvokeVoidAsync("MacEmu.attachKeys", dotNetRef); }
+      catch (Exception ex) { fatalError = "keys: " + ex.GetType().Name + ": " + ex.Message; StateHasChanged(); }
+      _ = RunLoopAsync(cts.Token);
+    }
+    // Canvas pushes happen here, after Blazor committed the DOM: drawing
+    // earlier (e.g. before a text<->graphics branch flip renders) would hit
+    // a detached canvas and stay black until the next change.
+    await PushFrameAsync();
+  }
+
+  // Dirty flags consumed by PushFrameAsync in OnAfterRenderAsync (DOM committed).
+  bool _pendingText, _pendingMem, _pendingSplash;
+  string _pendingSplashUrl = "";
+
+  async Task RunLoopAsync(CancellationToken ct)
+  {
+    try
+    {
+      while (!ct.IsCancellationRequested)
+      {
+        if (booted)
+        {
+          eng.Tick();
+          await InvokeAsync(SyncUi); // marshal sul sync context di Blazor
+        }
+        await Task.Delay(30, ct);
+      }
+    }
+    catch (OperationCanceledException) { }
+    catch (Exception ex) { fatalError = "loop: " + ex.GetType().Name + ": " + ex.Message; StateHasChanged(); }
+  }
+
+  // State only (no JS drawing): sets dirty flags + refreshes chrome.
+  void SyncUi()
+  {
+    if (!booted) return;
+    bool chrome = false;
+    if (eng.CurrentMode == EmuEngine.Mode.Splash)
+    {
+      if (!showGfx) { showGfx = true; chrome = true; }
+      if (currentSplash != eng.SplashBcf)
+      {
+        currentSplash = eng.SplashBcf;
+        _pendingSplashUrl = currentSplash;
+        _pendingSplash = true;
+      }
+      lastScreenVersion = eng.Screen.Version;
+    }
+    else if (eng.Video == EmuEngine.MEMDISPLAY)
+    {
+      if (!showGfx) { showGfx = true; chrome = true; }
+      _pendingMem = true; // animation: blit every frame while in MEMDISPLAY
+      lastScreenVersion = eng.Screen.Version;
+    }
+    else
+    {
+      if (showGfx) { showGfx = false; chrome = true; }
+      if (eng.Screen.Version != lastScreenVersion) _pendingText = true;
+    }
+    if (eng.TakeUploadRequest() != null) chrome = true;
+    if (eng.UiVersion != lastUiVersion || eng.PrinterText != lastPrinter)
+    {
+      lastUiVersion = eng.UiVersion; lastPrinter = eng.PrinterText; chrome = true;
+    }
+    if (chrome || _pendingText || _pendingMem || _pendingSplash) StateHasChanged();
+  }
+
+  async Task PushFrameAsync()
+  {
+    if (!booted) return;
+    try
+    {
+      if (_pendingSplash)
+      {
+        _pendingSplash = false;
+        await JS.InvokeVoidAsync("MacEmu.drawSplash", _pendingSplashUrl);
+      }
+      else if (_pendingMem && eng.CurrentMode != EmuEngine.Mode.Splash
+        && eng.Video == EmuEngine.MEMDISPLAY)
+      {
+        _pendingMem = false;
+        await JS.InvokeVoidAsync("MacEmu.ensureMemBg", "bcf/MEMVIEW.BCF");
+        await JS.InvokeVoidAsync("MacEmu.blitMem", eng.MemWordsBytes());
+        lastScreenVersion = eng.Screen.Version;
+      }
+      else if (_pendingText)
+      {
+        _pendingText = false;
+        await JS.InvokeVoidAsync("MacEmu.drawText",
+          eng.Screen.SnapshotChars(), eng.Screen.SnapshotAttrs());
+        lastScreenVersion = eng.Screen.Version;
+      }
+    }
+    catch (Exception ex)
+    {
+      if (!fatalError.StartsWith("frame:"))
+      {
+        fatalError = "frame: " + ex.GetType().Name + ": " + ex.Message;
+        StateHasChanged();
+      }
+    }
+  }
+
+  [JSInvokable]
+  public bool OnJsKey(string code, string key, bool alt)
+  {
+    bool handled = eng.HandleKey(code, key, alt);
+    SyncUi();
+    return handled;
+  }
+
+  [JSInvokable]
+  public bool OnJsChar(string ch)
+  {
+    if (ch.Length == 1) eng.HandleChar(ch[0]);
+    SyncUi();
+    return true;
+  }
+
+  async Task FocusKeys()
+  {
+    // Il mouse nell'originale non esisteva: ma il click sullo splash avanza,
+    // altrove serve solo a dare il focus tastiera al canvas.
+    if (booted && eng.CurrentMode == EmuEngine.Mode.Splash)
+    {
+      eng.HandleKey("Enter", "Enter", false);
+      SyncUi();
+    }
+    await JS.InvokeVoidAsync("MacEmu.focusKeys");
+  }
+  
+  
+
+  
+
+  
+
+  static string[] SplitLines(string t) =>
+    t.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  string[]? ResolveFile(string rel)
+  {
+    if (fileStore.TryGetValue(rel, out var l)) return l;
+    var bare = rel.Replace('/', '\\');
+    int bar = bare.LastIndexOf('\\');
+    if (bar >= 0) bare = bare[(bar + 1)..];
+    return fileStore.TryGetValue(bare, out l) ? l : null;
+  }
+
+  async Task PrefetchSamplesAsync()
+  {
+    foreach (var sm in sampleMacs)
+      TryStore($"MACRO\\{sm}.MAC", await GetText($"samples/{sm}.MAC"));
+    TryStore("MICRO\\CSTORE.MIC", await GetText("sys/cstore.mic"));
+  }
+
+  async Task<string?> GetText(string url)
+  {
+    try { return await Http.GetStringAsync(url); } catch { return null; }
+  }
+
+  void TryStore(string key, string? text)
+  {
+    if (text != null) fileStore[key] = SplitLines(text);
+  }
+
+  async Task OnUploadFile(InputFileChangeEventArgs e)
+  {
+    uploadErr = null;
+    try
+    {
+      var f = e.File;
+      using var st = f.OpenReadStream(1_000_000);
+      using var rd = new StreamReader(st);
+      var lines = SplitLines(await rd.ReadToEndAsync());
+      fileStore[f.Name] = lines;
+      eng.SupplyUpload(lines, f.Name);
+    }
+    catch (Exception ex) { uploadErr = "errore: " + ex.Message; }
+    SyncUi(); await FocusKeys();
+  }
+
+  async Task CancelUpload() { eng.CancelUpload(); SyncUi(); await FocusKeys(); }
+
+  void EnsureMain()
+  {
+    if (eng.CurrentMode == EmuEngine.Mode.Splash) eng.EnterMainFromSplash();
+  }
+
+  async Task OpenMiniC()
+  {
+    tab = 1;
+    if (cSource.Length == 0)
+      try { cSource = await Http.GetStringAsync($"minic/{cFile}.C"); } catch { cSource = ""; }
+  }
+
+  async Task OnCFileChange(ChangeEventArgs e)
+  {
+    cFile = e.Value?.ToString() ?? "FIBO";
+    cSource = await Http.GetStringAsync($"minic/{cFile}.C");
+    cStatus = ""; cMac = "";
+  }
+
+  static string ToMacText(int ilc, short[] words) =>
+    $"{ilc:x4}\n" + string.Join("\n", words.Select(w => $"{w & 0xffff:x4}")) + "\n";
+
+  async Task CompileMiniC()
+  {
+    cIsErr = false;
+    try
+    {
+      utilityH ??= await Http.GetStringAsync("minic/UTILITY.H");
+      var uh = utilityH;
+      var asm = new MiniC().Compile(cSource, _ => uh);
+      var (words, ilc, _) = new MacAssembler().AssembleText(asm);
+      cMac = ToMacText(ilc, words);
+      EnsureMain();
+      eng.LoadAsmWords(words, ilc, cFile + ".C");
+      eng.RefreshViews();
+      cStatus = $"ok: {words.Length} word ilc={ilc:X4} caricate in memoria";
+    }
+    catch (Exception ex) { cIsErr = true; cStatus = "errore: " + ex.Message; }
+    SyncUi();
+  }
+
+  async Task OpenMasm()
+  {
+    tab = 2;
+    if (asmSource.Length == 0)
+      try { asmSource = await Http.GetStringAsync($"masm/{asmFile}.ASM"); } catch { asmSource = ""; }
+  }
+
+  async Task OnAsmFileChange(ChangeEventArgs e)
+  {
+    asmFile = e.Value?.ToString() ?? "FIBO";
+    asmSource = await Http.GetStringAsync($"masm/{asmFile}.ASM");
+    asmStatus = ""; asmMac = "";
+  }
+
+  void AssembleMasm()
+  {
+    asmIsErr = false;
+    try
+    {
+      var (words, ilc, _) = new MacAssembler().AssembleText(SplitLines(asmSource));
+      asmMac = ToMacText(ilc, words);
+      EnsureMain();
+      eng.LoadAsmWords(words, ilc, asmFile + ".ASM");
+      eng.RefreshViews();
+      asmStatus = $"ok: {words.Length} word ilc={ilc:X4} caricate in memoria";
+    }
+    catch (Exception ex) { asmIsErr = true; asmStatus = "errore: " + ex.Message; }
+    SyncUi();
+  }
+
+  async Task SaveFile(string name, string text) =>
+    await JS.InvokeVoidAsync("MacEmu.saveFile", name, text);
+
+  async Task SaveCMac() => await SaveFile(cFile + ".MAC", cMac);
+  async Task SaveAsmMac() => await SaveFile(asmFile + ".MAC", asmMac);
+
+  public void Dispose()
+  {
+    cts.Cancel();
+    cts.Dispose();
+    dotNetRef?.Dispose();
+  }
+}

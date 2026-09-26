@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacEmu.UI", "MacEmu.UI\MacE
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacEmu.Tests", "MacEmu.Tests\MacEmu.Tests.csproj", "{0DF56488-1724-4C92-8D1B-B002E092C3BA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacEmu.Web", "MacEmu.Web\MacEmu.Web.csproj", "{8A58DA05-E3F5-40C9-91C5-699527179C98}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{0DF56488-1724-4C92-8D1B-B002E092C3BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0DF56488-1724-4C92-8D1B-B002E092C3BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0DF56488-1724-4C92-8D1B-B002E092C3BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A58DA05-E3F5-40C9-91C5-699527179C98}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A58DA05-E3F5-40C9-91C5-699527179C98}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A58DA05-E3F5-40C9-91C5-699527179C98}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A58DA05-E3F5-40C9-91C5-699527179C98}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

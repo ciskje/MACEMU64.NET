@@ -11,6 +11,20 @@ Exe rilasciato: `../MACEMU64.EXE` (self-contained). Originali DOS in `../BIN_ORI
 - `MacEmu.UI/` — `EmuForm*.cs` (stati + menu + run), `EmuFormDialog.cs`
   (dialoghi a stati), `TextScreen.cs` (VRAM 80x50), `BcfLoader.cs`,
   `EmuFormDrawText.generated.cs` (**generato, non editare a mano**).
+- `MacEmu.Web/` — versione browser (Blazor WebAssembly, hosting statico):
+  `Engine/EmuEngine.cs` (port headless di `EmuForm`), `Engine/Dialogs.cs`
+  (port 1:1 di `EmuFormDialog.cs` con `DlgKey` al posto di `Keys`; i file dal
+  disco passano dal picker del browser solo su "File not found!",
+  mai bottoni di comando), `Engine/ScreenBuffer.cs` (come `TextScreen`
+  senza GDI), `Pages/Index.razor` + `wwwroot/js/macemu.js` (canvas testo
+  80x50 diff-based, splash/MEMDISPLAY da `.BCF` decodificati in JS, beep
+  WebAudio). Asset wwwroot copiati da `../` (`bcf/`, `sys/`, `samples/`,
+  `minic/`, `masm/`, `fonts/`). Blazor passa `byte[]` come Base64 → il JS
+  decodifica con `toBytes()` (non Uint8Array diretto).
+- Rete/SMB: se la compressione Brotli fallisce a metà build lascia `.gz`/`.br`
+  da 0 byte in `bin/`/`obj/` che il DevServer serve a Chrome al posto dei file
+  veri (SRI failed in console) → cancellarli e ricaricare (in Debug la
+  compressione è disabilitata apposta nel csproj).
 - `MacEmu.Tests/` — 17 test di fedeltà, asset copiati in output (mai path assoluti).
 - `assets/Fonts/` — `Px437_IBM_EGA_8x8.ttf` (CC BY-SA 4.0, vedi LICENSE-int10h.txt).
 
@@ -81,7 +95,8 @@ Exe rilasciato: `../MACEMU64.EXE` (self-contained). Originali DOS in `../BIN_ORI
 ```powershell
 Get-Process MacEmu.UI,MACEMU64 -EA SilentlyContinue | Stop-Process -Force  # sblocca i file!
 dotnet build MacEmu.sln
-dotnet test MacEmu.Tests/MacEmu.Tests.csproj   # attesi 17/17
+dotnet test MacEmu.Tests/MacEmu.Tests.csproj   # attesi 49/49
+dotnet run --project MacEmu.Web                # versione browser in locale
 dotnet publish MacEmu.UI/MacEmu.UI.csproj -c Release -r win-x64 --self-contained true `
   /p:PublishSingleFile=true /p:InvariantGlobalization=true `
   /p:DebuggerSupport=false /p:MetadataUpdaterSupport=false /p:UseSystemResourceKeys=true

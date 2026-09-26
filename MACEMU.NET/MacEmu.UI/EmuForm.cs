@@ -61,7 +61,18 @@ public partial class EmuForm : Form
         _tick.Tick += OnTick;
         KeyDown += OnKeyDown;
         KeyPress += OnKeyPress;
+        _m.Printer.OnBell = Bell;
         Shown += (_, _) => ShowSplash("MACSTART.BCF", false);
+    }
+
+    int _lastBell;
+    // Bell stampante (PRINTER.C): suono di sistema, strozzato per non mitragliare durante RUN veloce
+    void Bell()
+    {
+        int now = Environment.TickCount;
+        if (now - _lastBell < 250) return;
+        _lastBell = now;
+        System.Media.SystemSounds.Beep.Play();
     }
 
     string Asset(string rel) => Path.Combine(_baseDir, rel);

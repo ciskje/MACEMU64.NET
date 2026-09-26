@@ -81,6 +81,8 @@ public sealed class PrinterDevice
 {
     private readonly short[] _buf = new short[160];
     private int _pos;
+    // PRINTER.C WritePrinter: *a==7 suona il bell (Gotoxy + printf bell)
+    public Action? OnBell;
     public void Reset() => _pos = 0;
     public string Text
     {
@@ -94,7 +96,7 @@ public sealed class PrinterDevice
     public bool Write(int addr, short v)
     {
         if (addr != 2) return false;
-        if (v == 7) { /* bell, ignore in .NET */ }
+        if (v == 7) { OnBell?.Invoke(); }
         else
         {
             if (_pos >= 15) _pos = 15;

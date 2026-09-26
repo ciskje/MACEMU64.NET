@@ -18,7 +18,10 @@ Exe rilasciato: `../MACEMU64.EXE` (self-contained). Originali DOS in `../BIN_ORI
 
 1. Ogni comportamento copiato dall'originale deve citare `file:riga` di `../SOURCE/`.
 2. Nuove porter: prima il test di fedeltà (byte-identico vs `.MAC`/`.MIC`), poi il codice.
-3. Eccezioni note e documentate: `TEST.MAC` stale (ASM più nuova di 10 gg),
+3. Eccezioni note e documentate: `TEST.MAC` rigenerato il 2026-09-26 da `TEST.ASM`
+   (era stale dal 24/01/1996, pre-rework readint v4.0) e verificato headless
+   (input "2" → k=2, HALT; ATTENZIONE: il programma fa `n--` dopo readint,
+   quindi lavora sugli indici 0..n-1),
    `LENTO`/`SCHED`/`DEMOTASK` infiniti per design, bug `SHIFTER.C` (HALT+spazzatura
    su CBus) corretto, stub memoria 252-255 solo se `MACDOS.MAC` manca.
 

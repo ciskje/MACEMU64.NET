@@ -115,7 +115,7 @@ public partial class EmuForm
                 }
             }
         }
-        _scr.Printc(63, 48, Vga.COLOR1 << 8, $"\"{_m.Printer.Text,-16}\"");
+        _scr.Printc(63, 48, Vga.COLOR1 << 8, $"{_m.Printer.Text,-16}"); // VISUAL.C Visual: "%-16s", col 63-78, mai oltre
     }
 
     // MENU.C Visualizza_Bp

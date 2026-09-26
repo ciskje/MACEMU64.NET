@@ -33,7 +33,7 @@ Exe rilasciato: `../MACEMU64.EXE` (self-contained). Originali DOS in `../BIN_ORI
   ```powershell
   $e = [Text.Encoding]::GetEncoding(437)
   $t = $e.GetString([IO.File]::ReadAllBytes('..\SOURCE\VISUAL.C'))
-  # estrai printc(0,y++,...) -> $rows; su rows[1]: -replace '"VER"','4.0b'
+  # estrai printc(0,y++,...) -> $rows; su rows[1]: -replace '"VER"','4.0c'
   # e -replace '\("COMP"\)  -','(.NET)   -'; verifica Length -eq 80 per ogni riga
   # emetti DrawTitleRow() (riga 1 + "A" a 71,1) e DrawTextBase() (altre 49 +
   # frecce ↑ U+2191 a 31,33,35,37,38,39,40,41,42,45,49,53,59 sulla riga 7)

@@ -5,7 +5,7 @@ public partial class EmuForm
 {
     void DrawTitleRow()
     {
-        _scr.Printc(0, 1, Vga.COLOR1 << 8, "║ MACEMU 4.0b   (.NET)   -  Copyright(c) 1996                         ║ bout...║");
+        _scr.Printc(0, 1, Vga.COLOR1 << 8, "║ MACEMU 4.0c   (.NET)   -  Copyright(c) 1996                         ║ bout...║");
         _scr.Printc(71, 1, Vga.COLOR6 << 8, "A");
     }
 

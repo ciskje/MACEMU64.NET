@@ -47,7 +47,7 @@ public partial class EmuForm : Form
         string stamp;
         try { stamp = File.GetLastWriteTime(exe).ToString("yyyyMMdd-HHmm"); }
         catch { stamp = "dev"; }
-        Text = $"MACEMU 4.0b (.NET) [{stamp}]";
+        Text = $"MACEMU 4.0c (.NET) [{stamp}]";
         ClientSize = new Size(1280, 800);
         StartPosition = FormStartPosition.CenterScreen;
         _scr.Dock = DockStyle.Fill;

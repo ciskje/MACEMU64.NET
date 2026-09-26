@@ -1,4 +1,4 @@
-# MACEMU 4.0b — port .NET 8 (WinForms, solo Windows)
+# MACEMU 4.0c — port .NET 8 (WinForms, solo Windows)
 
 Porto fedele dell'emulatore DOS MAC-1 (Borland C 16/32 bit, 1996) in .NET 8.
 L'eseguibile è `MACEMU64.EXE` nella root (i binari DOS originali sono in

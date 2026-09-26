@@ -1,6 +1,6 @@
-# MACEMU 4.0b — emulatore MAC-1 per Windows
+# MACEMU 4.0c — emulatore MAC-1 per Windows
 
-![MACEMU 4.0b](icona.png)
+![MACEMU 4.0c](icona.png)
 
 Port fedele per .NET 8 (WinForms, solo Windows) del celebre emulatore DOS
 del **MAC-1**, scritto nel 1996 da F. Ferrara, G. Baragiotta e A. Carrera
@@ -9,7 +9,7 @@ stessa interfaccia.
 
 ## Download
 
-Scarica **`MACEMU64-v4.0b.zip`** da
+Scarica **`MACEMU64-v4.0c.zip`** da
 [Releases](https://github.com/ciskje/MACEMU64.NET/releases/latest),
 scompatta ed esegui `MACEMU64.EXE` (self-contained, non serve installare .NET).
 

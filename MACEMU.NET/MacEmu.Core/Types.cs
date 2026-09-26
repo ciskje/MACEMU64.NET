@@ -9,7 +9,7 @@ public static class MacConstants
     public const int NumCtrl = 8;
     public const int MaxBp = 10;
     public const int NilAddr = 4097;
-    public const string Version = "4.0b";
+    public const string Version = "4.0c";
 
     // Register indices (from MENU.C ResetMac regtmp order)
     public const int R_PC = 0, R_AC = 1, R_SP = 2, R_IR = 3, R_TIR = 4;

@@ -100,7 +100,7 @@ sealed class AboutDlg : DlgBase
     {
         var s = F.Screen;
         s.Win(34, 23, 73, 45, Vga.COLOR13, " ABOUT... ");
-        s.Printc(42, 25, Vga.COLOR12 << 8, " MACEMU 4.0b (.NET)");
+        s.Printc(42, 25, Vga.COLOR12 << 8, " MACEMU 4.0c (.NET)");
         s.Printc(46, 27, Vga.COLOR12 << 8, "Copyright(c) 1996");
         s.Printc(52, 29, Vga.COLOR12 << 8, "by");
         s.Printc(37, 31, Vga.COLOR12 << 8, "F.Ferrara  G.Baragiotta  A.Carrera");

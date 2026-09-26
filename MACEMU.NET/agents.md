@@ -55,6 +55,19 @@ Exe rilasciato: `../MACEMU64.EXE` (self-contained). Originali DOS in `../BIN_ORI
   ovunque; layout a due righe tipo `Loaded N`/`instructions` (mai oltre col 77).
 - **Mai path assoluti nei sorgenti**: UI usa `AppDomain.BaseDirectory`, test con
   `FindRoot()` + asset copiati in output via csproj.
+- **Byte originali, non rendering**: i caratteri nei `.C` si verificano in esadecimale
+  (`od -t x1`), mai fidarsi di come il terminale li mostra. Lezione: `Key()` in
+  `MENU.C` usa DUE caratteri diversi (ombra sotto `0xDC` ▄, lato `0xDF` ▀).
+- **Alt morti? Colpa esterna prima che nostra**: overlay/hotkey di sistema mangiano
+  combo a livello OS (verificato: Alt+R mai recapitato su un PC). Diagnosi con
+  harness a tasti veri (`keybd_event`) contro `EmuForm` reale + `IMessageFilter`
+  (se il messaggio non è in coda, l'app non c'entra). Alt+G non è mai esistito
+  (solo I/R/A/J da manuale).
+- **Bell udibile**: stampante bell (7) → beep kernel 880Hz async (`Console.Beep`
+  via ThreadPool, NON `SystemSounds` legato allo schema audio), skip se speaker
+  occupato (niente throttle: sfasa i rimbalzi di Arcanoid).
+- **Shell = git-bash**: niente cmdlet PowerShell inline; opzioni MSBuild con `-p:`,
+  non `/p:`. Niente `zip`/`7z`: zip via `Expand-Archive`/`Compress-Archive`.
 
 ## Build / rilascio
 
@@ -67,6 +80,11 @@ dotnet publish MacEmu.UI/MacEmu.UI.csproj -c Release -r win-x64 --self-contained
   /p:DebuggerSupport=false /p:MetadataUpdaterSupport=false /p:UseSystemResourceKeys=true
 Copy-Item MacEmu.UI/bin/Release/net8.0-windows/win-x64/publish/MacEmu.UI.exe ../MACEMU64.EXE -Force
 # ../Fonts/, ../MACRO/, ../MICRO/, ../*.BCF, ../MACDOS.MAC devono stare accanto all'exe
+# Zip locale: Expand-Archive dello zip, sostituisci MACEMU64.EXE (+asset nuovi), Compress-Archive
+# Se Copy-Item dice "busy": l'exe è aperto dall'UTENTE (screenshot/test) → NON killare,
+# chiedi di chiuderlo e riprova.
+# Release GitHub (gh autenticato come ciskje): tagga da HEAD e carica lo zip
+# come asset, altrimenti la release resta ferma al commit vecchio.
 ```
 
 Limiti noti: niente trimming con WinForms (errore NETSDK1175) → self-contained

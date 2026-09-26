@@ -36,6 +36,11 @@ Tasti come l'originale: `F1` RUN, `F2` micro-passo, `F3` macro-passo,
 - **UI identica**: schermo testo 80x50 con font VGA 8x8 autentico, modalità
   grafica 64x64, splash screen originali.
 - Programmi dimostrativi in `MACRO/` (`FIBO`, `CIRCLES`, `FLOWERS`, `SCHED`…).
+- **MiniC**: sottoinsieme C che compila in assembly MAC
+  (vedi [MINIC.md](MINIC.md)). In `MACRO/` trovi `minic.exe`
+  (`minic PROG.C` → `PROG.MAC`), `masm.exe` (assembler
+  standalone) e tutti i demo riscritti in C (`FIBO.C`,
+  `CIRCLES.C`, …) più `UTILITY.H` con plot, timer e scheduler.
 
 ## Compilare dai sorgenti
 

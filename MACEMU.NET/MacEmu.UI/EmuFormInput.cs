@@ -96,12 +96,9 @@ public partial class EmuForm
             else EnterMain();
             return true;
         }
+        if (alt && HandleAlt(code)) return true;
         if (_mode == Mode.Main)
         {
-            if (alt && code == Keys.A) { ShowDlg(new AboutDlg(this)); return true; }
-            if (alt && code == Keys.I) { _hex ^= 1; Visual(); _scr.RefreshDirty(); return true; }
-            if (alt && code == Keys.R) { ShowDlg(new RatesDlg(this)); return true; }
-            if (alt && code == Keys.J) { ShowDlg(new JumpDlg(this)); return true; }
             switch (code)
             {
                 case Keys.Up:
@@ -120,10 +117,6 @@ public partial class EmuForm
             return true;
         }
         // Run mode
-        if (alt && code == Keys.A) { ShowDlg(new AboutDlg(this)); return true; }
-        if (alt && code == Keys.I && _video != MEMDISPLAY) { _hex ^= 1; Visual(); _scr.RefreshDirty(); return true; }
-        if (alt && code == Keys.R) { ShowDlg(new RatesDlg(this)); return true; }
-        if (alt && code == Keys.J && _video != MEMDISPLAY) { ShowDlg(new JumpDlg(this)); return true; }
         if (code == Keys.Back) return false; // no dialog: let KeyPress deliver to emulated keyboard
         if (code == Keys.Enter) { _m.Keyb.Load(13); return true; } // MACDOS readint wants CR
         if (_video == MEMDISPLAY)
@@ -161,6 +154,17 @@ public partial class EmuForm
                 ExitRun(); return true;
         }
         return true;
+    }
+
+    // Alt+I/R/J/A shared by main menu (MENU.C Gest_Key) and running (MACEMU.C Esecuzione).
+    // About is a no-op in MEMDISPLAY (MENU.C About: if ReadVideoMode()!=MEMDISPLAY).
+    bool HandleAlt(Keys code)
+    {
+        if (code == Keys.A && _video != MEMDISPLAY) { ShowDlg(new AboutDlg(this)); return true; }
+        if (code == Keys.I && _video != MEMDISPLAY) { _hex ^= 1; Visual(); _scr.RefreshDirty(); return true; }
+        if (code == Keys.R) { ShowDlg(new RatesDlg(this)); return true; }
+        if (code == Keys.J && _video != MEMDISPLAY) { ShowDlg(new JumpDlg(this)); return true; }
+        return false;
     }
 
     void SetVideoNoRefresh()

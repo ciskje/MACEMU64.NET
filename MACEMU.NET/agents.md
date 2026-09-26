@@ -107,6 +107,11 @@ Copy-Item MacEmu.UI/bin/Release/net8.0-windows/win-x64/publish/MacEmu.UI.exe ../
 # chiedi di chiuderlo e riprova.
 # Release GitHub (gh autenticato come ciskje): tagga da HEAD e carica lo zip
 # come asset, altrimenti la release resta ferma al commit vecchio.
+# Release Web: dotnet publish MacEmu.Web -c Release, zip del contenuto di
+# bin/Release/net8.0/publish/wwwroot via Compress-Archive
+# (es. $env:TEMP\MACEMU-Web-4.0c.zip), poi gh release create web-v4.0c
+# <zip> --title 'MACEMU 4.0c (Web)' --notes-file <file> (mai testo inline
+# con PowerShell: la quotatura rompe gli accenti). Tag separato dal desktop.
 ```
 
 Limiti noti: niente trimming con WinForms (errore NETSDK1175) → self-contained
